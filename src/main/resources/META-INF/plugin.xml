@@ -5,16 +5,15 @@
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-name -->
-    <name>OpenReviewer</name>
+    <name>Open Reviewer</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor url="https://www.yourcompany.com">YourCompany</vendor>
+    <vendor>Open Reviewer</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
     <description><![CDATA[
-        Enter short description for your plugin here.<br>
-        <em>most HTML tags may be used</em>
+        Open Reviewer surfaces startup performance risks and AI-assisted suggestions inside your IDE.
     ]]></description>
 
     <!-- Product and plugin compatibility requirements.
@@ -24,6 +23,17 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-
+        <notificationGroup id="Open Reviewer Notifications" displayType="BALLOON" isLogByDefault="true"/>
+        <applicationConfigurable
+                id="openReviewer.settings"
+                displayName="Open Reviewer"
+                parentId="tools"
+                instance="com.example.open.reviewer.settings.OpenReviewerSettingsConfigurable"/>
+        <toolWindow
+                id="Open Reviewer"
+                icon="/META-INF/pluginIcon.svg"
+                anchor="left"
+                factoryClass="com.example.open.reviewer.toolwindow.OpenReviewerToolWindowFactory"
+                canCloseContents="false"/>
     </extensions>
 </idea-plugin>
