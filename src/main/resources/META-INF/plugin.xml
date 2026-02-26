@@ -35,5 +35,6 @@
                 anchor="left"
                 factoryClass="com.example.open.reviewer.toolwindow.OpenReviewerToolWindowFactory"
                 canCloseContents="false"/>
+        <projectActivity implementation="com.example.open.reviewer.tour.index.OpenReviewrTourStartupActivity"/>
     </extensions>
 </idea-plugin>

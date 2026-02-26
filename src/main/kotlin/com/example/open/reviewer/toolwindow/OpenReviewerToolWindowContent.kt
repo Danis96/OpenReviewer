@@ -4,6 +4,7 @@ import com.example.open.reviewer.analysis.RiskLevel
 import com.example.open.reviewer.analysis.StartupAnalysisResult
 import com.example.open.reviewer.analysis.StartupAnalysisService
 import com.example.open.reviewer.analysis.Suggestion
+import com.example.open.reviewer.editor.EditorSuggestionDecorationService
 import com.example.open.reviewer.settings.OpenReviewerSettingsConfigurable
 import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationGroupManager
@@ -51,6 +52,7 @@ class OpenReviewerToolWindowContent(
     private val project: Project,
 ) : JBPanel<OpenReviewerToolWindowContent>(BorderLayout()) {
     private val analysisService = StartupAnalysisService.getInstance(project)
+    private val editorSuggestionDecorationService = EditorSuggestionDecorationService.getInstance(project)
 
     private val analyzeButton = JButton("Analyze Startup", AllIcons.Actions.Execute)
     private val configureApiButton = JButton("Configure API", AllIcons.General.GearPlain)
@@ -436,6 +438,7 @@ class OpenReviewerToolWindowContent(
         updateEntryPointChips(result.analyzedEntryPoints)
         updateAiRiskBadge(result)
         updateSuggestions(result.suggestions)
+        editorSuggestionDecorationService.showSuggestions(result.suggestions)
     }
 
     private fun updateAiRiskBadge(result: StartupAnalysisResult) {
@@ -675,6 +678,7 @@ class OpenReviewerToolWindowContent(
     }
 
     private fun showAnalysisFailure(error: Throwable) {
+        editorSuggestionDecorationService.clearAll()
         NotificationGroupManager.getInstance()
             .getNotificationGroup("Open Reviewer Notifications")
             .createNotification(

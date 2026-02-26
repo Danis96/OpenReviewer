@@ -47,6 +47,14 @@ tasks {
     }
 }
 
+val cleanIdeaSandbox by tasks.registering(Delete::class) {
+    delete(layout.buildDirectory.dir("idea-sandbox"))
+}
+
+tasks.named("prepareSandbox") {
+    dependsOn(cleanIdeaSandbox)
+}
+
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
