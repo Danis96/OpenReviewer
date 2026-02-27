@@ -23,7 +23,7 @@ class OpenReviewrTourScanner(
         val foundStops = mutableListOf<OpenReviewrTourStop>()
         val fileIndex = ProjectFileIndex.getInstance(project)
 
-        indicator.text = "Scanning for OpenReviewr tour markers"
+        indicator.text = "Scanning for @tour markers"
         indicator.isIndeterminate = true
 
         fileIndex.iterateContent { virtualFile ->

@@ -211,6 +211,19 @@ class OpenReviewrToursPanel(
         loaderIcon.isOpaque = false
         loaderIcon.suspend()
 
+        refreshButton.apply {
+            toolTipText = "Refresh tour scan"
+            isContentAreaFilled = false
+            isFocusPainted = false
+            isOpaque = false
+            border = JBUI.Borders.empty(2)
+            margin = JBUI.insets(0)
+            preferredSize = JBUI.size(20, 20)
+            minimumSize = JBUI.size(20, 20)
+            maximumSize = JBUI.size(20, 20)
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        }
+
         stopFileLabel.font = JBFont.label().deriveFont(Font.BOLD, 13f)
         stopBadgeLabel.font = JBFont.small().asBold()
         stopLineLabel.font = JBFont.small()
@@ -458,7 +471,7 @@ class OpenReviewrToursPanel(
             stopFileLabel.text = "No tour stops"
             stopBadgeLabel.text = ""
             stopLineLabel.text = ""
-            stopDescriptionLabel.text = "Add @OpenReviewrTour markers in code comments to create tour stops."
+            stopDescriptionLabel.text = "Add @tour markers in code comments to create tour stops."
             analyzedAtLabel.text = ""
             overviewArea.text = "No AI summary yet."
             renderResponsibilities(emptyList())
@@ -520,20 +533,16 @@ class OpenReviewrToursPanel(
         val isGuidedActive = activeTourState != null
         val hasAnalyzedStops = summaryByStopKey.isNotEmpty()
         refreshButton.isEnabled = !isAnalyzing && !isGuidedActive
-        refreshButton.isContentAreaFilled = false
-        refreshButton.border = JBUI.Borders.empty(2)
-        refreshButton.isFocusPainted = false
-        refreshButton.toolTipText = "Refresh tour scan"
         startTourButton.isVisible = !isGuidedActive
         startTourButton.isEnabled =
             !latestSnapshot.isScanning &&
-                latestSnapshot.tours.isNotEmpty() &&
-                hasAnalyzedStops &&
-                !isGuidedActive
+            latestSnapshot.tours.isNotEmpty() &&
+            hasAnalyzedStops &&
+            !isGuidedActive
         exitTourButton.isVisible = isGuidedActive
         exitTourButton.isEnabled = isGuidedActive
-        analyzeSelectedButton.isEnabled = canAnalyze && selectedStop != null && !isGuidedActive
-        analyzeAllButton.isEnabled = canAnalyze && latestSnapshot.stops.isNotEmpty() && !isGuidedActive
+        analyzeSelectedButton.isEnabled = canAnalyze && selectedStop != null
+        analyzeAllButton.isEnabled = canAnalyze && latestSnapshot.stops.isNotEmpty()
         openInEditorButton.isEnabled = selectedStop != null
     }
 
@@ -633,7 +642,7 @@ class OpenReviewrToursPanel(
             } ?: latestSnapshot.tours.firstOrNull()
 
         if (selectedTour == null) {
-            notifyInfo("No tour available. Add @OpenReviewrTour markers first.")
+            notifyInfo("No tour available. Add @tour markers first.")
             return
         }
 

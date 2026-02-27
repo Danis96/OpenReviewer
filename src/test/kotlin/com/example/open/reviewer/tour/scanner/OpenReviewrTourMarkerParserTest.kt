@@ -10,7 +10,7 @@ class OpenReviewrTourMarkerParserTest {
 
     @Test
     fun `parses marker with description`() {
-        val marker = parser.parseMarker("// @OpenReviewrTour: App entry point")
+        val marker = parser.parseMarker("// @tour: App entry point")
 
         assertNotNull(marker)
         assertEquals("App entry point", marker?.description)
@@ -18,10 +18,18 @@ class OpenReviewrTourMarkerParserTest {
 
     @Test
     fun `parses marker without description`() {
-        val marker = parser.parseMarker("// @OpenReviewrTour")
+        val marker = parser.parseMarker("// @tour")
 
         assertNotNull(marker)
         assertNull(marker?.description)
+    }
+
+    @Test
+    fun `supports legacy openreviewr marker`() {
+        val marker = parser.parseMarker("// @OpenReviewrTour: Legacy marker")
+
+        assertNotNull(marker)
+        assertEquals("Legacy marker", marker?.description)
     }
 
     @Test
@@ -34,7 +42,7 @@ class OpenReviewrTourMarkerParserTest {
 
     @Test
     fun `parses dart doc style marker`() {
-        val marker = parser.parseMarker("/// @OpenReviewrTour: Root widget")
+        val marker = parser.parseMarker("/// @tour: Root widget")
 
         assertNotNull(marker)
         assertEquals("Root widget", marker?.description)

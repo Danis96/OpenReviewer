@@ -32,11 +32,12 @@ data class OpenReviewrProjectPlatforms(
 }
 
 object OpenReviewrTourConstants {
-    const val MARKER_PREFIX = "@OpenReviewrTour"
+    const val MARKER_PREFIX = "@tour"
+    const val LEGACY_OPENREVIEWR_MARKER_PREFIX = "@OpenReviewrTour"
     const val LEGACY_MARKER_PREFIX = "@GenieTour"
     const val MAX_FILE_SIZE_BYTES = 1_000_000L
     const val SCAN_DEBOUNCE_MILLIS = 750
-    const val MARKER_PATTERN = "^@(OpenReviewrTour|GenieTour)(?::\\s*(.*))?$"
+    const val MARKER_PATTERN = "^@(tour|OpenReviewrTour|GenieTour)(?::\\s*(.*))?$"
 
     val supportedSourceExtensions =
         setOf(
