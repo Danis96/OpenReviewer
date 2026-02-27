@@ -1,7 +1,9 @@
 package com.example.open.reviewer.tour.index
 
 import com.example.open.reviewer.tour.detection.MobileProjectDetector
+import com.example.open.reviewer.tour.model.MobilePlatform
 import com.example.open.reviewer.tour.model.OpenReviewrProjectPlatforms
+import com.example.open.reviewer.tour.model.OpenReviewrTour
 import com.example.open.reviewer.tour.model.OpenReviewrTourConstants
 import com.example.open.reviewer.tour.model.OpenReviewrTourStop
 import com.example.open.reviewer.tour.scanner.OpenReviewrTourScanner
@@ -36,6 +38,9 @@ class OpenReviewrTourIndexService(
     private var platforms = OpenReviewrProjectPlatforms(setOf())
 
     @Volatile
+    private var tours: List<OpenReviewrTour> = emptyList()
+
+    @Volatile
     private var isScanning = false
 
     init {
@@ -46,7 +51,12 @@ class OpenReviewrTourIndexService(
 
     fun getSnapshot(): OpenReviewrTourIndexSnapshot {
         synchronized(lock) {
-            return OpenReviewrTourIndexSnapshot(stops = stops, platforms = platforms, isScanning = isScanning)
+            return OpenReviewrTourIndexSnapshot(
+                stops = stops,
+                platforms = platforms,
+                isScanning = isScanning,
+                tours = tours,
+            )
         }
     }
 
@@ -56,9 +66,12 @@ class OpenReviewrTourIndexService(
 
     fun scheduleRebuild(immediate: Boolean = false) {
         val delayMs = if (immediate) 0 else OpenReviewrTourConstants.SCAN_DEBOUNCE_MILLIS
+        // if many files change rapidly,
+        // cancel any pending scans, and then schedule a new one
         debounceAlarm.cancelAllRequests()
         debounceAlarm.addRequest(
             {
+                // show bottom bar with progress and bg task
                 ProgressManager.getInstance().run(
                     object : Task.Backgroundable(project, "OpenReviewr Tours scan", true) {
                         override fun run(indicator: ProgressIndicator) {
@@ -89,11 +102,71 @@ class OpenReviewrTourIndexService(
         updatedStops: List<OpenReviewrTourStop>,
         updatedPlatforms: OpenReviewrProjectPlatforms,
     ) {
+        val updatedTours = buildTours(updatedStops, updatedPlatforms)
+        // inside [synchronized] so update is atomic,
+        // - no one can read half upated state
         synchronized(lock) {
             stops = updatedStops
             platforms = updatedPlatforms
+            tours = updatedTours
         }
         publishUpdate()
+    }
+
+    private fun buildTours(
+        scannedStops: List<OpenReviewrTourStop>,
+        detectedPlatforms: OpenReviewrProjectPlatforms,
+    ): List<OpenReviewrTour> {
+        if (scannedStops.isEmpty()) return emptyList()
+
+        val orderedStops =
+            scannedStops
+                .sortedWith(compareBy<OpenReviewrTourStop> { it.filePath }.thenBy { it.lineNumber })
+                .mapIndexed { index, stop ->
+                    stop.copy(
+                        order = index,
+                        aiSummary = stop.aiSummary ?: stop.description,
+                    )
+                }
+
+        val candidatePlatforms =
+            detectedPlatforms.detected
+                .filterNot { it == MobilePlatform.UNKNOWN }
+                .ifEmpty { orderedStops.map { it.platform }.toSet() }
+
+        val toursByPlatform =
+            candidatePlatforms.mapNotNull { platform ->
+                val platformStops = orderedStops.filter { it.platform == platform }
+                if (platformStops.isEmpty()) return@mapNotNull null
+
+                OpenReviewrTour(
+                    id = "openreviewr-${platform.name.lowercase()}-tour",
+                    name = "${platformLabel(platform)} Code Tour",
+                    platform = platform,
+                    stops = platformStops.mapIndexed { index, stop -> stop.copy(order = index) },
+                )
+            }
+
+        if (toursByPlatform.isNotEmpty()) return toursByPlatform
+
+        return listOf(
+            OpenReviewrTour(
+                id = "openreviewr-general-tour",
+                name = "Project Code Tour",
+                platform = MobilePlatform.UNKNOWN,
+                stops = orderedStops.mapIndexed { index, stop -> stop.copy(order = index) },
+            ),
+        )
+    }
+
+    private fun platformLabel(platform: MobilePlatform): String {
+        return when (platform) {
+            MobilePlatform.ANDROID -> "Android"
+            MobilePlatform.FLUTTER -> "Flutter"
+            MobilePlatform.REACT_NATIVE -> "React Native"
+            MobilePlatform.IOS -> "iOS"
+            MobilePlatform.UNKNOWN -> "General"
+        }
     }
 
     private fun setScanning(value: Boolean) {

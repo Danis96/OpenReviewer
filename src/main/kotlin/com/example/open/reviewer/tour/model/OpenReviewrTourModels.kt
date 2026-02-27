@@ -13,6 +13,15 @@ data class OpenReviewrTourStop(
     val lineNumber: Int,
     val description: String?,
     val platform: MobilePlatform,
+    val aiSummary: String? = null,
+    val order: Int = 0,
+)
+
+data class OpenReviewrTour(
+    val id: String,
+    val name: String,
+    val platform: MobilePlatform,
+    val stops: List<OpenReviewrTourStop>,
 )
 
 data class OpenReviewrProjectPlatforms(

@@ -33,6 +33,8 @@ class OpenReviewrTourScanner(
                 return@iterateContent true
             }
 
+            // zato sto mora biti u safe threadu,
+            // scanner works in BG so we need to wrap psi manager
             val stopsInFile =
                 ReadAction.compute<List<OpenReviewrTourStop>, RuntimeException> {
                     val psiFile = PsiManager.getInstance(project).findFile(virtualFile) ?: return@compute emptyList()

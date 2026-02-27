@@ -9,9 +9,13 @@ import com.example.open.reviewer.tour.index.OpenReviewrTourIndexSnapshot
 import com.example.open.reviewer.tour.model.MobilePlatform
 import com.example.open.reviewer.tour.model.OpenReviewrProjectPlatforms
 import com.example.open.reviewer.tour.model.OpenReviewrTourStop
+import com.example.open.reviewer.tour.player.OpenReviewrTourPlayerController
+import com.example.open.reviewer.tour.player.OpenReviewrTourPlayerState
+import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.progress.ProgressIndicator
@@ -69,11 +73,24 @@ class OpenReviewrToursPanel(
     private val summaryByStopKey = linkedMapOf<String, CachedTourSummary>()
     private val errorByStopKey = linkedMapOf<String, String>()
 
-    private val refreshButton = JButton("Refresh")
+    private val refreshButton = JButton(AllIcons.Actions.Refresh)
+    private val startTourButton = JButton("Start Tour")
+    private val exitTourButton = JButton("Exit Tour")
     private val analyzeSelectedButton = JButton("Analyze Selected")
     private val analyzeAllButton = JButton("Analyze All")
     private val statusLabel = JBLabel("Ready")
     private val loaderIcon = AsyncProcessIcon("openreviewr-tour-loader")
+    private val floatingTourPanel =
+        OpenReviewrTourFloatingPanel(
+            onPrevious = { tourPlayerController.previousStep() },
+            onNext = { tourPlayerController.nextStep() },
+            onExit = { tourPlayerController.exitTour() },
+        )
+    private val tourPlayerController =
+        OpenReviewrTourPlayerController(project) { state ->
+            onTourStateChanged(state)
+        }
+    private var activeTourState: OpenReviewrTourPlayerState? = null
 
     private val filesChipPanel = JPanel(FlowLayout(FlowLayout.LEFT, 6, 4)).apply { isOpaque = false }
     private val filesChipScroll =
@@ -148,6 +165,8 @@ class OpenReviewrToursPanel(
         )
 
         refreshButton.addActionListener { indexService.refreshNow() }
+        startTourButton.addActionListener { startTourFromSelection() }
+        exitTourButton.addActionListener { tourPlayerController.exitTour() }
         analyzeSelectedButton.addActionListener { analyzeSelectedStop() }
         analyzeAllButton.addActionListener { analyzeAllStops() }
         openInEditorButton.addActionListener { openSelectedStopInEditor() }
@@ -215,14 +234,22 @@ class OpenReviewrToursPanel(
     }
 
     private fun createActionsRow(): JComponent {
-        val row = JPanel(FlowLayout(FlowLayout.LEFT, 8, 0))
-        row.isOpaque = false
-        row.add(refreshButton)
-        row.add(analyzeSelectedButton)
-        row.add(analyzeAllButton)
-        row.add(loaderIcon)
-        row.add(statusLabel)
-        return row
+        return JPanel(FlowLayout(FlowLayout.LEFT, 8, 0)).apply {
+            isOpaque = false
+            add(refreshButton)
+            add(analyzeSelectedButton)
+            add(analyzeAllButton)
+            add(loaderIcon)
+            add(statusLabel)
+        }
+    }
+
+    private fun createTourActionsRow(): JComponent {
+        return JPanel(FlowLayout(FlowLayout.LEFT, 8, 0)).apply {
+            isOpaque = false
+            add(startTourButton)
+            add(exitTourButton)
+        }
     }
 
     /** "Tour Files" heading + chip strip. */
@@ -236,6 +263,14 @@ class OpenReviewrToursPanel(
         panel.isOpaque = false
         panel.add(label, BorderLayout.NORTH)
         panel.add(filesChipScroll, BorderLayout.CENTER)
+        panel.add(
+            JPanel(BorderLayout()).apply {
+                isOpaque = false
+                border = JBUI.Borders.emptyTop(6)
+                add(createTourActionsRow(), BorderLayout.WEST)
+            },
+            BorderLayout.SOUTH,
+        )
         return panel
     }
 
@@ -482,15 +517,33 @@ class OpenReviewrToursPanel(
 
     private fun updateButtonsState(selectedStop: OpenReviewrTourStop?) {
         val canAnalyze = latestSnapshot.platforms.isSupported && !latestSnapshot.isScanning && !isAnalyzing
-        refreshButton.isEnabled = !isAnalyzing
-        analyzeSelectedButton.isEnabled = canAnalyze && selectedStop != null
-        analyzeAllButton.isEnabled = canAnalyze && latestSnapshot.stops.isNotEmpty()
+        val isGuidedActive = activeTourState != null
+        val hasAnalyzedStops = summaryByStopKey.isNotEmpty()
+        refreshButton.isEnabled = !isAnalyzing && !isGuidedActive
+        refreshButton.isContentAreaFilled = false
+        refreshButton.border = JBUI.Borders.empty(2)
+        refreshButton.isFocusPainted = false
+        refreshButton.toolTipText = "Refresh tour scan"
+        startTourButton.isVisible = !isGuidedActive
+        startTourButton.isEnabled =
+            !latestSnapshot.isScanning &&
+                latestSnapshot.tours.isNotEmpty() &&
+                hasAnalyzedStops &&
+                !isGuidedActive
+        exitTourButton.isVisible = isGuidedActive
+        exitTourButton.isEnabled = isGuidedActive
+        analyzeSelectedButton.isEnabled = canAnalyze && selectedStop != null && !isGuidedActive
+        analyzeAllButton.isEnabled = canAnalyze && latestSnapshot.stops.isNotEmpty() && !isGuidedActive
         openInEditorButton.isEnabled = selectedStop != null
     }
 
     private fun updateStatusText() {
         statusLabel.text =
             when {
+                activeTourState != null -> {
+                    val state = activeTourState!!
+                    "Guided mode: step ${state.currentStepIndex + 1}/${state.tour.stops.size}"
+                }
                 isAnalyzing -> "Analyzing..."
                 latestSnapshot.isScanning -> "Scanning..."
                 !latestSnapshot.platforms.isSupported -> "No supported mobile project detected"
@@ -569,6 +622,65 @@ class OpenReviewrToursPanel(
             summaryByStopKey.remove(key)
             errorByStopKey[key] = result.error ?: "Analysis failed"
         }
+        activeTourState?.let { renderFloatingTourPanel(it) }
+    }
+
+    private fun startTourFromSelection() {
+        val selectedStop = latestSnapshot.stops.getOrNull(selectedStopIndex)
+        val selectedTour =
+            selectedStop?.let { stop ->
+                latestSnapshot.tours.firstOrNull { tour -> tour.stops.any { sameStop(it, stop) } }
+            } ?: latestSnapshot.tours.firstOrNull()
+
+        if (selectedTour == null) {
+            notifyInfo("No tour available. Add @OpenReviewrTour markers first.")
+            return
+        }
+
+        val startIndex =
+            selectedStop
+                ?.let { stop -> selectedTour.stops.indexOfFirst { sameStop(it, stop) } }
+                ?.takeIf { it >= 0 } ?: 0
+        tourPlayerController.startTour(selectedTour, startIndex)
+    }
+
+    private fun onTourStateChanged(state: OpenReviewrTourPlayerState?) {
+        if (project.isDisposed) return
+        ApplicationManager.getApplication().invokeLater {
+            if (project.isDisposed) return@invokeLater
+            activeTourState = state
+            if (state == null) {
+                floatingTourPanel.close()
+                render()
+                return@invokeLater
+            }
+
+            val listIndex = latestSnapshot.stops.indexOfFirst { sameStop(it, state.currentStep ?: return@invokeLater) }
+            if (listIndex >= 0) {
+                selectedStopIndex = listIndex
+            }
+            render()
+            renderFloatingTourPanel(state)
+        }
+    }
+
+    private fun renderFloatingTourPanel(state: OpenReviewrTourPlayerState) {
+        val step = state.currentStep ?: return
+        val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
+        floatingTourPanel.showOrUpdate(
+            editor = editor,
+            tourTitle = state.tour.name,
+            stepNumber = state.currentStepIndex + 1,
+            totalSteps = state.tour.stops.size,
+            explanation = resolveStepExplanation(step),
+            hasPrevious = state.hasPrevious,
+            hasNext = state.hasNext,
+        )
+    }
+
+    private fun resolveStepExplanation(stop: OpenReviewrTourStop): String {
+        val cachedSummary = summaryByStopKey[stopKey(stop)]?.summary?.summary
+        return stop.aiSummary ?: cachedSummary ?: stop.description ?: "No explanation available for this step yet."
     }
 
     private fun openSelectedStopInEditor() {
@@ -713,6 +825,15 @@ class OpenReviewrToursPanel(
             MobilePlatform.IOS -> JBColor(Color(0x5D5D5D), Color(0xC8C8C8))
             MobilePlatform.UNKNOWN -> JBColor(Color(0x777777), Color(0xAAAAAA))
         }
+    }
+
+    private fun sameStop(
+        left: OpenReviewrTourStop,
+        right: OpenReviewrTourStop,
+    ): Boolean {
+        return left.filePath == right.filePath &&
+            left.lineNumber == right.lineNumber &&
+            left.description.orEmpty() == right.description.orEmpty()
     }
 
     private fun stopKey(stop: OpenReviewrTourStop): String = "${stop.filePath}:${stop.lineNumber}:${stop.description.orEmpty()}"
