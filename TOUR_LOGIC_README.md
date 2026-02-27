@@ -7,12 +7,13 @@ The feature is integrated into the existing `Open Reviewer` tool window as a `To
 
 ## Marker Format
 Supported markers:
-- `// @OpenReviewrTour: optional description`
-- `// @OpenReviewrTour`
+- `// @tour: optional description`
+- `// @tour`
+- Legacy support: `// @OpenReviewrTour: ...`
 - Legacy support: `// @GenieTour: ...`
 
 Rules implemented:
-- Marker must start with `@OpenReviewrTour` (or legacy `@GenieTour`).
+- Marker must start with `@tour` (legacy `@OpenReviewrTour` and `@GenieTour` are also accepted).
 - Description is optional.
 - Multiple markers per file are supported.
 
