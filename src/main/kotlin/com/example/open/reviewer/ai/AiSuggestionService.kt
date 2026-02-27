@@ -217,7 +217,14 @@ Important:
 - Do not include markdown fences, headings, prefaces, XML tags, or any extra text.
 - Use this exact schema:
 [
-  {"title":"...", "impact":"LOW|MEDIUM|HIGH", "reasoning":"..."}
+  {
+    "title":"...",
+    "impact":"LOW|MEDIUM|HIGH",
+    "reasoning":"...",
+    "file_path":"absolute/path/to/file.kt or null",
+    "line":123,
+    "code_snippet":"optional snippet around that line"
+  }
 ]
 """.trim()
     }
@@ -376,7 +383,13 @@ Use this exact schema:
 
             if (!title.isNullOrBlank() && !impactText.isNullOrBlank() && !reasoning.isNullOrBlank()) {
                 val impact = runCatching { SuggestionImpact.valueOf(impactText) }.getOrNull() ?: SuggestionImpact.MEDIUM
-                suggestions.add(Suggestion(title = title, details = normalizeSuggestionText(reasoning), impact = impact))
+                suggestions.add(
+                    Suggestion(
+                        title = title,
+                        details = normalizeSuggestionText(reasoning),
+                        impact = impact,
+                    ),
+                )
             }
         }
 
@@ -398,7 +411,13 @@ Use this exact schema:
             val reasoning = match.groupValues[3].trim().replace(Regex("\\s+"), " ")
             val impact = runCatching { SuggestionImpact.valueOf(impactText) }.getOrNull() ?: SuggestionImpact.MEDIUM
             if (title.isNotBlank() && reasoning.isNotBlank()) {
-                suggestions.add(Suggestion(title = title, details = normalizeSuggestionText(reasoning), impact = impact))
+                suggestions.add(
+                    Suggestion(
+                        title = title,
+                        details = normalizeSuggestionText(reasoning),
+                        impact = impact,
+                    ),
+                )
             }
         }
 
@@ -437,7 +456,13 @@ Use this exact schema:
                     .trim()
                     .take(70)
                     .ifBlank { "Startup optimization suggestion" }
-            suggestions.add(Suggestion(title = title, details = normalizeSuggestionText(paragraph), impact = impact))
+            suggestions.add(
+                Suggestion(
+                    title = title,
+                    details = normalizeSuggestionText(paragraph),
+                    impact = impact,
+                ),
+            )
         }
 
         return suggestions
@@ -452,9 +477,21 @@ Use this exact schema:
             val title = extractJsonField(block, "title")
             val impactText = extractJsonField(block, "impact")?.uppercase(Locale.ROOT)
             val reasoning = extractJsonField(block, "reasoning")
+            val filePath = extractJsonField(block, "file_path")
+            val line = extractJsonNumberField(block, "line")?.toIntOrNull()?.takeIf { it > 0 }
+            val snippet = extractJsonField(block, "code_snippet")
             if (!title.isNullOrBlank() && !reasoning.isNullOrBlank()) {
                 val impact = runCatching { SuggestionImpact.valueOf((impactText ?: "MEDIUM")) }.getOrNull() ?: SuggestionImpact.MEDIUM
-                suggestions.add(Suggestion(title = title, details = normalizeSuggestionText(reasoning), impact = impact))
+                suggestions.add(
+                    Suggestion(
+                        title = title,
+                        details = normalizeSuggestionText(reasoning),
+                        impact = impact,
+                        filePath = filePath,
+                        line = line,
+                        codeSnippet = snippet,
+                    ),
+                )
             }
         }
         return suggestions

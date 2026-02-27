@@ -40,6 +40,9 @@ data class Suggestion(
     val title: String,
     val details: String,
     val impact: SuggestionImpact,
+    val filePath: String? = null,
+    val line: Int? = null,
+    val codeSnippet: String? = null,
 )
 
 enum class AiRiskParseStatus {
