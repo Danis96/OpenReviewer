@@ -198,7 +198,6 @@ class OpenReviewerToolWindowContent(
         val main = JBPanel<JBPanel<*>>()
         main.layout = BoxLayout(main, BoxLayout.Y_AXIS)
         main.isOpaque = false
-
         main.add(createTopActionsRow())
         main.add(createSpacer(8))
         main.add(createRiskScoreSection())
