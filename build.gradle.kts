@@ -26,6 +26,7 @@ dependencies {
 
         // Add necessary plugin dependencies for compilation here, example:
         // bundledPlugin("com.intellij.java")
+        plugins("Dart:503.0.0")
     }
 }
 
@@ -45,15 +46,19 @@ tasks {
         sourceCompatibility = "21"
         targetCompatibility = "21"
     }
+
+    runIde {
+        args("/Users/danispreldzic/Desktop/SQA/programgenie")
+    }
 }
 
-val cleanIdeaSandbox by tasks.registering(Delete::class) {
-    delete(layout.buildDirectory.dir("idea-sandbox"))
-}
-
-tasks.named("prepareSandbox") {
-    dependsOn(cleanIdeaSandbox)
-}
+//val cleanIdeaSandbox by tasks.registering(Delete::class) {
+//    delete(layout.buildDirectory.dir("idea-sandbox"))
+//}
+//
+//tasks.named("prepareSandbox") {
+//    dependsOn(cleanIdeaSandbox)
+//}
 
 kotlin {
     compilerOptions {
