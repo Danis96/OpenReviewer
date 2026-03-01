@@ -48,7 +48,7 @@ tasks {
     }
 
     runIde {
-        args("/Users/danispreldzic/Desktop/SQA/programgenie")
+        args("/Users/danispreldzic/Desktop/Danis/PROJECTS/whiskr_nutrition_ai")
     }
 }
 
