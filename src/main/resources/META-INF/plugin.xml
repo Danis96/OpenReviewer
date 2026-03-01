@@ -36,5 +36,15 @@
                 factoryClass="com.example.open.reviewer.toolwindow.OpenReviewerToolWindowFactory"
                 canCloseContents="false"/>
         <projectActivity implementation="com.example.open.reviewer.tour.index.OpenReviewrTourStartupActivity"/>
+        <projectActivity implementation="com.example.open.reviewer.commitchecklist.spec.CommitChecklistSpecStartupActivity"/>
     </extensions>
+    <actions>
+        <action
+                id="OpenReviewer.InstallCommitChecklistSpec"
+                class="com.example.open.reviewer.commitchecklist.setup.InstallCommitChecklistSpecAction"
+                text="OpenReviewer: Install Commit Checklist Spec"
+                description="Install OpenReviewer commit checklist spec for this repository">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+    </actions>
 </idea-plugin>
