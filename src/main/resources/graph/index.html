@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Open Reviewer Graph</title>
+  <style>
+    :root {
+      --bg: #0f131a;
+      --panel: #151a24;
+      --text: #e8ecf1;
+      --muted: #9aa5b4;
+      --line: #2a3345;
+      --chip: #253047;
+      --chipText: #e8ecf1;
+    }
+    :root[data-theme="light"] {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --text: #1f2a3b;
+      --muted: #5d6a7a;
+      --line: #d2dbea;
+      --chip: #e8eef9;
+      --chipText: #1f2a3b;
+    }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .root {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .chip {
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--chipText);
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 10px;
+      min-height: 0;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: auto;
+      min-height: 0;
+    }
+    .summary {
+      white-space: pre-wrap;
+      padding: 12px;
+      line-height: 1.45;
+      font-size: 12px;
+    }
+    .graph-stage {
+      position: relative;
+      min-height: 320px;
+    }
+    #cy {
+      width: 100%;
+      height: 100%;
+      min-height: 320px;
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(77, 137, 255, 0.12), transparent 45%),
+        radial-gradient(circle at 85% 90%, rgba(244, 183, 64, 0.12), transparent 40%);
+    }
+    .tooltip {
+      position: absolute;
+      pointer-events: none;
+      display: none;
+      background: rgba(14, 18, 26, 0.94);
+      color: #eaf0ff;
+      border: 1px solid #4c5871;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 11px;
+      max-width: 280px;
+      white-space: pre-wrap;
+      z-index: 30;
+    }
+    :root[data-theme="light"] .tooltip {
+      background: rgba(255, 255, 255, 0.96);
+      color: #22314a;
+      border-color: #bccbe0;
+    }
+    .status {
+      padding: 8px 10px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .nodes {
+      padding: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-content: flex-start;
+    }
+    .node {
+      border: 1px solid var(--line);
+      background: var(--chip);
+      color: var(--chipText);
+      border-radius: 999px;
+      font-size: 12px;
+      padding: 4px 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .node.selected {
+      outline: 2px solid #4d89ff;
+      outline-offset: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="root">
+    <div class="meta">
+      <span class="chip" id="layout-chip">layout: cose</span>
+      <span class="chip" id="zoom-chip">zoom: 100%</span>
+      <span class="chip" id="theme-chip">theme: dark</span>
+      <span class="chip" id="count-chip">nodes: 0 edges: 0</span>
+    </div>
+    <div class="layout">
+      <div class="panel graph-stage">
+        <div id="cy"></div>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+      <div class="panel">
+        <div class="summary" id="summary">Graph renderer shell loaded.</div>
+        <div class="status" id="status">renderer: waiting</div>
+        <div class="nodes" id="nodes"></div>
+      </div>
+    </div>
+  </div>
+  <script src="./graph.js"></script>
+</body>
+</html>
