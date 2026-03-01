@@ -1,5 +1,6 @@
 package com.example.open.reviewer.toolwindow
 
+import com.example.open.reviewer.architecture.ui.ArchitectureFastScanPanel
 import com.example.open.reviewer.tour.ui.OpenReviewrToursPanel
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -13,8 +14,15 @@ class OpenReviewerToolWindowFactory : ToolWindowFactory {
         toolWindow: ToolWindow,
     ) {
         val tabs = JTabbedPane()
+        val architecturePanel = ArchitectureFastScanPanel(project)
         tabs.addTab("Startup Risk", OpenReviewerToolWindowContent(project))
+        tabs.addTab("Architecture", architecturePanel)
         tabs.addTab("Tours", OpenReviewrToursPanel(project))
+        tabs.addChangeListener {
+            if (tabs.selectedComponent === architecturePanel) {
+                architecturePanel.onTabOpened()
+            }
+        }
 
         val content =
             ContentFactory.getInstance()
