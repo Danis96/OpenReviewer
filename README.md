@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/openreviewr-logo.png" alt="OpenReviewr logo" width="520" />
+  <img src="src/main/resources/META-INF/OpenReviewr.png" alt="OpenReviewr logo" width="520" />
 </p>
 
 # Open Reviewer
@@ -245,7 +245,7 @@ src/test/kotlin/com/example/open/reviewer/
 
 ## Branding Asset
 
-- Logo path used by this README: `docs/openreviewr-logo.png`
+- Logo path used by this README: `src/main/resources/META-INF/OpenReviewr.png`
 
 ## Testing Scope
 
