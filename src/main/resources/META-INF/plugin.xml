@@ -19,6 +19,7 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>Git4Idea</depends>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
@@ -37,6 +38,8 @@
                 canCloseContents="false"/>
         <projectActivity implementation="com.example.open.reviewer.tour.index.OpenReviewrTourStartupActivity"/>
         <projectActivity implementation="com.example.open.reviewer.commitchecklist.spec.CommitChecklistSpecStartupActivity"/>
+        <checkinHandlerFactory implementation="com.example.open.reviewer.commitchecklist.gate.CommitChecklistCheckinHandlerFactory"/>
+        <prePushHandler implementation="com.example.open.reviewer.commitchecklist.gate.CommitChecklistPrePushHandler"/>
     </extensions>
     <actions>
         <action

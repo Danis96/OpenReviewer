@@ -26,6 +26,7 @@ dependencies {
 
         // Add necessary plugin dependencies for compilation here, example:
         // bundledPlugin("com.intellij.java")
+        bundledPlugin("Git4Idea")
         plugins("Dart:503.0.0")
     }
 }
