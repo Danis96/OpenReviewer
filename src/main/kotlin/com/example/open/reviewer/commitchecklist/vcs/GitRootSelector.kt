@@ -19,8 +19,6 @@ internal object GitRootSelector {
             }
         }
 
-        return normalizedRoots
-            .sortedBy { it.toString() }
-            .firstOrNull()
+        return normalizedRoots.minByOrNull { it.toString() }
     }
 }
